@@ -3,9 +3,11 @@ const connectDB = require("./src/config/database")
 const app = express();
 const User = require("./src/models/user");
 const { validateSignup } = require("./src/utils/validation");
-const bcrypt = require('bcrypt');
+const cookieParser = require("cookie-parser")
+const { userAuth } = require("./src/middlewares/auth");
 
 app.use(express.json());
+app.use(cookieParser())
 
 app.get("/", (req, res) => {
     res.send("Data Coming From Server")
@@ -21,8 +23,18 @@ app.post("/login", async (req, res) => {
             throw new Error("EmailId is not present")
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password)
+        const isPasswordValid = await user.validatePassword(password)
         if (isPasswordValid) {
+
+            const token = await user.getJWT();
+
+            console.log(token);
+
+
+            // Add the token to cookie and send response back to the user
+            res.cookie("token", token, {
+                expires: new Date(Date.now() + 8 * 3600000)
+            })
             res.send("Login SuccessFull!!!")
         } else {
             throw new Error("Password is not correct");
@@ -53,6 +65,21 @@ app.post("/singup", async (req, res) => {
         res.send("User Added Succesfully!")
     } catch (error) {
         res.status(400).send("ERROR : " + error.message)
+    }
+})
+
+app.get("/profile",userAuth, async(req, res) => {
+    try {
+
+        const user = req.user;
+        if(!user){
+            throw new Error("User does not exist");
+        }
+        
+        res.send(user)
+    } catch (error) {
+        res.status(400).send("ERROR : " + error.message)
+        
     }
 })
 
