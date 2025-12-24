@@ -1,6 +1,8 @@
 const express = require("express")
 const connectDB = require("./src/config/database")
 const cookieParser = require("cookie-parser")
+const ConnectionRequest = require("./src/models/ConnectionRequest")
+
 
 const app = express();
 
